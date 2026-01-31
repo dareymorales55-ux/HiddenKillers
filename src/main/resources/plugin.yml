@@ -1,0 +1,11 @@
+name: ProjectAnonymous
+main: com.deejay.projectanonymous.ProjectAnonymous
+version: 1.0.0
+api-version: "1.21"
+author: deejay
+
+depend:
+  - NickAPI
+
+commands: {}
+permissions: {}
