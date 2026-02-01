@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
@@ -5,6 +6,7 @@
 
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- Project identity -->
     <groupId>com.deejay</groupId>
     <artifactId>hiddenkillers</artifactId>
     <version>1.0.0</version>
@@ -12,12 +14,14 @@
 
     <name>HiddenKillers</name>
 
+    <!-- Java -->
     <properties>
         <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.release>21</maven.compiler.release>
     </properties>
 
-    <!-- ✅ Correct repositories -->
+    <!-- Repositories -->
     <repositories>
         <repository>
             <id>papermc</id>
@@ -25,6 +29,7 @@
         </repository>
     </repositories>
 
+    <!-- Dependencies -->
     <dependencies>
 
         <!-- Paper API -->
@@ -35,39 +40,29 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- ❗ NickAPI is NOT a Maven dependency -->
-        <!-- Server provides it at runtime -->
+        <!-- NickAPI (local jar) -->
+        <dependency>
+            <groupId>xyz.haoshoku</groupId>
+            <artifactId>nickapi</artifactId>
+            <version>6.6.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/libs/NickAPI.jar</systemPath>
+        </dependency>
 
     </dependencies>
 
+    <!-- Build -->
     <build>
         <plugins>
 
+            <!-- Java compiler -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
                 <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
+                    <release>21</release>
                 </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.5.1</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <minimizeJar>true</minimizeJar>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
 
         </plugins>
