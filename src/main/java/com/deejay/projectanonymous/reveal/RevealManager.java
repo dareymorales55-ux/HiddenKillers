@@ -1,4 +1,4 @@
-package com.deejay.projectanonymous;
+package com.deejay.projectanonymous.reveal;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -8,72 +8,115 @@ import org.bukkit.BanList;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.Team;
+
+import com.deejay.projectanonymous.ProjectAnonymous;
 
 import xyz.haoshoku.nick.api.NickAPI;
 
-public class RevealManager {
+public final class RevealManager {
 
-    private static final Set<UUID> REVEALED = new HashSet<>();
+    private static final Set<UUID> revealed = new HashSet<>();
 
-    /**
-     * Reveals a player temporarily
-     */
-    public static void reveal(Player player, ProjectAnonymous plugin, int durationTicks) {
-        if (REVEALED.contains(player.getUniqueId())) return;
+    private RevealManager() {}
 
-        REVEALED.add(player.getUniqueId());
+    /* =========================
+       REVEAL
+       ========================= */
 
-        // Reset NickAPI to real identity
+    public static void reveal(Player player, ProjectAnonymous plugin, long durationTicks) {
+        if (revealed.contains(player.getUniqueId())) return;
+
+        revealed.add(player.getUniqueId());
+
+        // Show real identity
         NickAPI.resetNick(player);
         NickAPI.resetSkin(player);
-        NickAPI.resetProfileName(player);
         NickAPI.resetUniqueId(player);
+        NickAPI.resetProfileName(player);
         NickAPI.refreshPlayer(player);
 
-        String realName = player.getName();
-        String darkRedName = ChatColor.DARK_RED + realName;
-
-        // Paper-side name changes (for deaths, advancements, hover text, etc.)
-        player.setDisplayName(darkRedName);
-        player.setPlayerListName(darkRedName);
+        player.setDisplayName(ChatColor.DARK_RED + player.getName());
+        player.setPlayerListName(ChatColor.DARK_RED + player.getName());
         player.setGlowing(true);
 
-        // Re-anonymize later
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                REVEALED.remove(player.getUniqueId());
-                player.setGlowing(false);
-                plugin.applyAnonymity(player);
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            Scoreboard board = online.getScoreboard();
+            if (board == Bukkit.getScoreboardManager().getMainScoreboard()) {
+                board = Bukkit.getScoreboardManager().getNewScoreboard();
+                online.setScoreboard(board);
             }
-        }.runTaskLater(plugin, durationTicks);
+
+            Team team = board.getTeam("revealed");
+            if (team == null) {
+                team = board.registerNewTeam("revealed");
+                team.setColor(ChatColor.DARK_RED);
+            }
+
+            team.addEntry(player.getName());
+        }
+
+        Bukkit.getScheduler().runTaskLater(plugin, () -> hide(player), durationTicks);
     }
 
-    /**
-     * Returns whether a player is currently revealed
-     */
-    public static boolean isRevealed(Player player) {
-        return REVEALED.contains(player.getUniqueId());
+    /* =========================
+       HIDE (Re-anonymize)
+       ========================= */
+
+    public static void hide(Player player) {
+        if (!revealed.remove(player.getUniqueId())) return;
+
+        NickAPI.setNick(player, "Morkovnica");
+        NickAPI.setSkin(player, "Morkovnica");
+        NickAPI.refreshPlayer(player);
+
+        player.setDisplayName("Morkovnica");
+        player.setPlayerListName("Morkovnica");
+        player.setGlowing(false);
+
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            Team team = online.getScoreboard().getTeam("revealed");
+            if (team != null) {
+                team.removeEntry(player.getName());
+            }
+        }
     }
 
-    /**
-     * Called when a revealed player is killed
-     */
-    public static void handleRevealDeath(Player victim) {
-        String realName = victim.getName();
+    /* =========================
+       CAUGHT DURING REVEAL
+       ========================= */
 
-        // Ban (dark red)
+    public static boolean handleDeath(Player victim, ProjectAnonymous plugin) {
+        if (!isRevealed(victim)) return false;
+
+        // Broadcast caught message
+        Bukkit.broadcastMessage(
+                ChatColor.RED + victim.getName() + " has been caught."
+        );
+
+        // Ban
         Bukkit.getBanList(BanList.Type.NAME).addBan(
-                realName,
+                victim.getName(),
                 ChatColor.DARK_RED + "Your cover was blown.",
                 null,
                 null
         );
 
-        victim.kickPlayer(ChatColor.DARK_RED + "Your cover was blown.");
+        // Kick safely
+        Bukkit.getScheduler().runTask(plugin, () ->
+                victim.kickPlayer(ChatColor.DARK_RED + "Your cover was blown.")
+        );
 
-        // Chat message (light red)
-        Bukkit.broadcastMessage(ChatColor.RED + realName + " has been caught.");
+        revealed.remove(victim.getUniqueId());
+        return true;
+    }
+
+    /* =========================
+       STATE
+       ========================= */
+
+    public static boolean isRevealed(Player player) {
+        return revealed.contains(player.getUniqueId());
     }
 }
