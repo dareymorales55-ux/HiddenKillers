@@ -12,7 +12,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import xyz.haoshoku.nick.api.NickAPI;
 
-public class Reveal {
+public class RevealManager {
 
     private static final Set<UUID> REVEALED = new HashSet<>();
 
