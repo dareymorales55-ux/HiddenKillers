@@ -19,6 +19,9 @@ public final class RevealManager {
 
     private static final Set<UUID> revealed = new HashSet<>();
 
+    private static final String ANON_NAME = "Player";
+    private static final String ANON_SKIN = "Morkovnica";
+
     private RevealManager() {}
 
     /* =========================
@@ -67,12 +70,13 @@ public final class RevealManager {
     public static void hide(Player player) {
         if (!revealed.remove(player.getUniqueId())) return;
 
-        NickAPI.setNick(player, "Morkovnica");
-        NickAPI.setSkin(player, "Morkovnica");
+        // Restore anonymous identity
+        NickAPI.setNick(player, ANON_NAME);
+        NickAPI.setSkin(player, ANON_SKIN);
         NickAPI.refreshPlayer(player);
 
-        player.setDisplayName("Morkovnica");
-        player.setPlayerListName("Morkovnica");
+        player.setDisplayName(ANON_NAME);
+        player.setPlayerListName(ANON_NAME);
         player.setGlowing(false);
 
         for (Player online : Bukkit.getOnlinePlayers()) {
@@ -90,12 +94,12 @@ public final class RevealManager {
     public static boolean handleDeath(Player victim, ProjectAnonymous plugin) {
         if (!isRevealed(victim)) return false;
 
-        // Broadcast caught message
+        // Light red chat message
         Bukkit.broadcastMessage(
                 ChatColor.RED + victim.getName() + " has been caught."
         );
 
-        // Ban
+        // Ban with dark red message
         Bukkit.getBanList(BanList.Type.NAME).addBan(
                 victim.getName(),
                 ChatColor.DARK_RED + "Your cover was blown.",
