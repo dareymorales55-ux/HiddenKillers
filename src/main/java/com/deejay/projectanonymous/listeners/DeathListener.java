@@ -42,12 +42,11 @@ public class DeathListener implements Listener {
 
         if (!displayName.equalsIgnoreCase(realName)) return;
 
-        // Stop vanilla death message
-        event.setDeathMessage(null);
+        // ✅ DO NOT cancel vanilla death message
 
-        // Broadcast caught message
+        // Caught message (light red, NOT bold)
         Bukkit.broadcastMessage(
-                ChatColor.RED + "" + ChatColor.BOLD + realName + " has been caught."
+                ChatColor.RED + realName + " has been caught."
         );
 
         // Ban victim
@@ -58,9 +57,10 @@ public class DeathListener implements Listener {
                 null
         );
 
-        Bukkit.getScheduler().runTask(plugin, () -> victim.kickPlayer(
-                ChatColor.DARK_RED + "Your cover was blown."
-        ));
+        // Kick safely
+        Bukkit.getScheduler().runTask(plugin, () ->
+                victim.kickPlayer(ChatColor.DARK_RED + "Your cover was blown.")
+        );
     }
 
     /**
