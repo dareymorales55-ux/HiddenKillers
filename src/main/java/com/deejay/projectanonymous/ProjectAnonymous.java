@@ -3,12 +3,17 @@ package com.deejay.projectanonymous;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import com.deejay.projectanonymous.listeners.DeathListener;
+import com.deejay.projectanonymous.listeners.JoinListener;
+import com.deejay.projectanonymous.reveal.HourlyReveal;
+
 import xyz.haoshoku.nick.api.NickAPI;
 
 public class ProjectAnonymous extends JavaPlugin {
 
     @Override
     public void onEnable() {
+
         // Ensure NickAPI is present
         if (Bukkit.getPluginManager().getPlugin("NickAPI") == null) {
             getLogger().severe("NickAPI not found! Disabling ProjectAnonymous.");
@@ -18,12 +23,17 @@ public class ProjectAnonymous extends JavaPlugin {
 
         // Register listeners
         Bukkit.getPluginManager().registerEvents(
-                new com.deejay.projectanonymous.listeners.JoinListener(this),
+                new JoinListener(this),
                 this
         );
 
         Bukkit.getPluginManager().registerEvents(
-                new com.deejay.projectanonymous.listeners.DeathListener(this),
+                new DeathListener(this),
+                this
+        );
+
+        Bukkit.getPluginManager().registerEvents(
+                new HourlyReveal(this),
                 this
         );
 
@@ -36,7 +46,7 @@ public class ProjectAnonymous extends JavaPlugin {
     }
 
     /**
-     * Utility method if other classes ever need to check nick state
+     * Utility method (optional)
      */
     public boolean isNicked(org.bukkit.entity.Player player) {
         return NickAPI.isNicked(player);
