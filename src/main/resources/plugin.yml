@@ -13,7 +13,16 @@ commands:
     usage: /reveal <player> <durationSeconds>
     permission: projectanonymous.reveal
 
+  unreveal:
+    description: Remove reveal from a player
+    usage: /unreveal <player>
+    permission: projectanonymous.unreveal
+
 permissions:
   projectanonymous.reveal:
     description: Allows revealing players manually
+    default: op
+
+  projectanonymous.unreveal:
+    description: Allows unrevealing players manually
     default: op
