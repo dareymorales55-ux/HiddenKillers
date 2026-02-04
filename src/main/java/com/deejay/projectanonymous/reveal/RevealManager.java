@@ -33,17 +33,18 @@ public final class RevealManager {
 
         revealed.add(player.getUniqueId());
 
-        // Show real identity
-        NickAPI.resetNick(player);
+        // --- SKIN: real skin ---
         NickAPI.resetSkin(player);
-        NickAPI.resetUniqueId(player);
-        NickAPI.resetProfileName(player);
         NickAPI.refreshPlayer(player);
 
+        // --- NAME: real name (Paper only) ---
         player.setDisplayName(ChatColor.DARK_RED + player.getName());
         player.setPlayerListName(ChatColor.DARK_RED + player.getName());
+
+        // Glow
         player.setGlowing(true);
 
+        // Dark red glow via team
         for (Player online : Bukkit.getOnlinePlayers()) {
             Scoreboard board = online.getScoreboard();
             if (board == Bukkit.getScoreboardManager().getMainScoreboard()) {
@@ -60,6 +61,7 @@ public final class RevealManager {
             team.addEntry(player.getName());
         }
 
+        // Auto-hide
         Bukkit.getScheduler().runTaskLater(plugin, () -> hide(player), durationTicks);
     }
 
@@ -70,13 +72,14 @@ public final class RevealManager {
     public static void hide(Player player) {
         if (!revealed.remove(player.getUniqueId())) return;
 
-        // Restore anonymous identity
-        NickAPI.setNick(player, ANON_NAME);
+        // --- SKIN: anonymous ---
         NickAPI.setSkin(player, ANON_SKIN);
         NickAPI.refreshPlayer(player);
 
+        // --- NAME: anonymous ---
         player.setDisplayName(ANON_NAME);
         player.setPlayerListName(ANON_NAME);
+
         player.setGlowing(false);
 
         for (Player online : Bukkit.getOnlinePlayers()) {
@@ -94,12 +97,12 @@ public final class RevealManager {
     public static boolean handleDeath(Player victim, ProjectAnonymous plugin) {
         if (!isRevealed(victim)) return false;
 
-        // Light red chat message
+        // Light red caught message (NOT bold)
         Bukkit.broadcastMessage(
                 ChatColor.RED + victim.getName() + " has been caught."
         );
 
-        // Ban with dark red message
+        // Ban
         Bukkit.getBanList(BanList.Type.NAME).addBan(
                 victim.getName(),
                 ChatColor.DARK_RED + "Your cover was blown.",
@@ -107,7 +110,7 @@ public final class RevealManager {
                 null
         );
 
-        // Kick safely
+        // Kick
         Bukkit.getScheduler().runTask(plugin, () ->
                 victim.kickPlayer(ChatColor.DARK_RED + "Your cover was blown.")
         );
