@@ -2,10 +2,12 @@ package com.deejay.projectanonymous.listeners;
 
 import com.deejay.projectanonymous.ProjectAnonymous;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 import xyz.haoshoku.nick.api.NickAPI;
 
@@ -21,31 +23,38 @@ public class JoinListener implements Listener {
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
 
-        // Remove vanilla join message
+        // Cancel vanilla join message
         event.setJoinMessage(null);
 
-        // Delay to avoid skin/name race conditions
+        // Custom join message
+        Bukkit.broadcastMessage(
+                ChatColor.YELLOW + "Player has joined"
+        );
+
+        // Delay to avoid skin race conditions
         Bukkit.getScheduler().runTaskLater(plugin, () -> anonymize(player), 10L);
     }
 
     private void anonymize(Player player) {
         if (!player.isOnline()) return;
 
-        // Prevent double-nicking
-        if (NickAPI.isNicked(player)) return;
-
-        String fakeName = "Player";
-        String skinOwner = "Morkovnica"; // slim Steve skin
-
-        // Set BOTH name and skin
-        NickAPI.setNick(player, fakeName);
-        NickAPI.setSkin(player, skinOwner);
-
-        // Apply changes
+        // --- SKIN ONLY ---
+        NickAPI.setSkin(player, "Morkovnica");
         NickAPI.refreshPlayer(player);
 
-        // Ensure consistency
-        player.setDisplayName(fakeName);
-        player.setPlayerListName(fakeName);
+        // --- NAME ONLY (no NickAPI) ---
+        player.setDisplayName("Player");
+        player.setPlayerListName("Player");
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        // Cancel vanilla quit message
+        event.setQuitMessage(null);
+
+        // Custom quit message
+        Bukkit.broadcastMessage(
+                ChatColor.YELLOW + "Player has left"
+        );
     }
 }
