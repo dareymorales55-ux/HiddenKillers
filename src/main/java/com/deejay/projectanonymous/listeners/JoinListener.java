@@ -7,13 +7,15 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 
 import xyz.haoshoku.nick.api.NickAPI;
 
 public class JoinListener implements Listener {
 
     private final ProjectAnonymous plugin;
+
+    private static final String ANON_NAME = "Player";
+    private static final String ANON_SKIN = "Morkovnica";
 
     public JoinListener(ProjectAnonymous plugin) {
         this.plugin = plugin;
@@ -23,38 +25,29 @@ public class JoinListener implements Listener {
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
 
-        // Cancel vanilla join message
-        event.setJoinMessage(null);
-
         // Custom join message
-        Bukkit.broadcastMessage(
-                ChatColor.YELLOW + "Player has joined"
-        );
+        event.setJoinMessage(ChatColor.YELLOW + "Player has joined");
 
-        // Delay to avoid skin race conditions
-        Bukkit.getScheduler().runTaskLater(plugin, () -> anonymize(player), 10L);
+        // Delay avoids race conditions
+        Bukkit.getScheduler().runTaskLater(plugin, () -> anonymize(player), 5L);
     }
 
     private void anonymize(Player player) {
         if (!player.isOnline()) return;
 
-        // --- SKIN ONLY ---
-        NickAPI.setSkin(player, "Morkovnica");
+        /* =========================
+           SKIN (NickAPI ONLY)
+           ========================= */
+        NickAPI.setSkin(player, ANON_SKIN);
         NickAPI.refreshPlayer(player);
 
-        // --- NAME ONLY (no NickAPI) ---
-        player.setDisplayName("Player");
-        player.setPlayerListName("Player");
-    }
+        /* =========================
+           NAME / TAGS (Paper ONLY)
+           ========================= */
+        player.setDisplayName(ANON_NAME);
+        player.setPlayerListName(ANON_NAME);
 
-    @EventHandler
-    public void onQuit(PlayerQuitEvent event) {
-        // Cancel vanilla quit message
-        event.setQuitMessage(null);
-
-        // Custom quit message
-        Bukkit.broadcastMessage(
-                ChatColor.YELLOW + "Player has left"
-        );
+        // Ensure nametag is clean
+        player.customName(null);
     }
 }
