@@ -1,6 +1,8 @@
 package com.deejay.projectanonymous.listeners;
 
 import com.deejay.projectanonymous.ProjectAnonymous;
+import com.deejay.projectanonymous.reveal.RevealManager;
+
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -29,6 +31,17 @@ public class DeathListener implements Listener {
         Player victim = event.getEntity();
         Player killer = victim.getKiller();
 
+        /* =========================
+           CAUGHT DURING REVEAL
+           ========================= */
+        if (RevealManager.isRevealed(victim)) {
+            RevealManager.handleCaught(victim, plugin);
+            return;
+        }
+
+        /* =========================
+           ORIGINAL SWORD LOGIC
+           ========================= */
         if (killer == null) return;
 
         ItemStack weapon = killer.getInventory().getItemInMainHand();
@@ -42,14 +55,12 @@ public class DeathListener implements Listener {
 
         if (!displayName.equalsIgnoreCase(realName)) return;
 
-        // ✅ DO NOT cancel vanilla death message
+        // Vanilla death message stays
 
-        // Caught message (light red, NOT bold)
         Bukkit.broadcastMessage(
                 ChatColor.RED + realName + " has been caught."
         );
 
-        // Ban victim
         Bukkit.getBanList(BanList.Type.NAME).addBan(
                 realName,
                 ChatColor.DARK_RED + "Your cover was blown.",
@@ -57,14 +68,13 @@ public class DeathListener implements Listener {
                 null
         );
 
-        // Kick safely
         Bukkit.getScheduler().runTask(plugin, () ->
                 victim.kickPlayer(ChatColor.DARK_RED + "Your cover was blown.")
         );
     }
 
     /**
-     * Replace vanilla quit message
+     * Custom quit message
      */
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
