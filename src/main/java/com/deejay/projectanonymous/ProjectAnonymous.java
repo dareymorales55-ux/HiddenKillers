@@ -61,7 +61,7 @@ public class ProjectAnonymous extends JavaPlugin {
     }
 
     /**
-     * Utility method (optional, not required by core logic)
+     * Utility method (optional)
      * NickAPI is ONLY used for skins
      */
     public boolean isNicked(org.bukkit.entity.Player player) {
