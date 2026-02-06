@@ -29,7 +29,7 @@ public class BellOfTruth implements Listener {
 
     private final Map<UUID, Long> cooldowns = new HashMap<>();
 
-    // ===== CONSTANTS (NO CONFIG) =====
+    // ===== CONSTANTS =====
     private static final int COOLDOWN_SECONDS = 300;
     private static final int REVEAL_DURATION_TICKS = 200;
     private static final double RADIUS = 20.0;
@@ -103,7 +103,7 @@ public class BellOfTruth implements Listener {
         Location bellLoc = block.getLocation().add(0.5, 0.5, 0.5);
         spawnBellCircle(bellLoc);
 
-        // 🔥 DELEGATE REVEAL LOGIC
+        // 🔥 Delegate reveal ONLY to RevealManager
         for (Player target : Bukkit.getOnlinePlayers()) {
             if (!target.getWorld().equals(bellLoc.getWorld())) continue;
             if (target.getLocation().distance(bellLoc) > RADIUS) continue;
@@ -113,7 +113,7 @@ public class BellOfTruth implements Listener {
     }
 
     /* =========================
-       VISUALS ONLY
+       VISUALS
        ========================= */
 
     private void spawnBellCircle(Location center) {
@@ -139,7 +139,6 @@ public class BellOfTruth implements Listener {
                             1
                     );
                 }
-
                 ticks++;
             }
         }.runTaskTimer(plugin, 0L, 1L);
@@ -158,8 +157,8 @@ public class BellOfTruth implements Listener {
                 ChatColor.GRAY + "Reveals nearby players"
         ));
 
-        // ✨ ENCHANTMENT GLINT (HIDDEN)
-        meta.addEnchant(Enchantment.LUCK, 1, true);
+        // ✅ SAFE GLINT ENCHANT
+        meta.addEnchant(Enchantment.DURABILITY, 1, true);
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
 
         meta.getPersistentDataContainer()
