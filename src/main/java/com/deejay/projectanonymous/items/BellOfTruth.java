@@ -103,7 +103,7 @@ public class BellOfTruth implements Listener {
         Location bellLoc = block.getLocation().add(0.5, 0.5, 0.5);
         spawnBellCircle(bellLoc);
 
-        // 🔥 Delegate reveal ONLY to RevealManager
+        // 🔥 Reveal via RevealManager ONLY
         for (Player target : Bukkit.getOnlinePlayers()) {
             if (!target.getWorld().equals(bellLoc.getWorld())) continue;
             if (target.getLocation().distance(bellLoc) > RADIUS) continue;
@@ -157,8 +157,13 @@ public class BellOfTruth implements Listener {
                 ChatColor.GRAY + "Reveals nearby players"
         ));
 
-        // ✅ SAFE GLINT ENCHANT
-        meta.addEnchant(Enchantment.DURABILITY, 1, true);
+        // ✅ SAFE enchant glint (NO enum usage)
+        Enchantment unbreaking = Enchantment.getByKey(
+                NamespacedKey.minecraft("unbreaking")
+        );
+        if (unbreaking != null) {
+            meta.addEnchant(unbreaking, 1, true);
+        }
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
 
         meta.getPersistentDataContainer()
