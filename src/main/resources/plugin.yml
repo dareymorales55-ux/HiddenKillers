@@ -18,6 +18,11 @@ commands:
     usage: /unreveal <player>
     permission: projectanonymous.unreveal
 
+  givecompass:
+    description: Give a detective compass
+    usage: /givecompass <player>
+    permission: projectanonymous.givecompass
+
 permissions:
   projectanonymous.reveal:
     description: Allows revealing players manually
@@ -25,4 +30,8 @@ permissions:
 
   projectanonymous.unreveal:
     description: Allows unrevealing players manually
+    default: op
+
+  projectanonymous.givecompass:
+    description: Allows giving the detective compass
     default: op
