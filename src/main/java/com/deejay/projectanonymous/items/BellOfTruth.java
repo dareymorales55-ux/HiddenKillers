@@ -4,6 +4,7 @@ import java.util.*;
 
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -11,6 +12,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -101,7 +103,7 @@ public class BellOfTruth implements Listener {
         Location bellLoc = block.getLocation().add(0.5, 0.5, 0.5);
         spawnBellCircle(bellLoc);
 
-        // 🔥 ONLY DELEGATE TO REVEAL MANAGER
+        // 🔥 DELEGATE REVEAL LOGIC
         for (Player target : Bukkit.getOnlinePlayers()) {
             if (!target.getWorld().equals(bellLoc.getWorld())) continue;
             if (target.getLocation().distance(bellLoc) > RADIUS) continue;
@@ -155,6 +157,10 @@ public class BellOfTruth implements Listener {
         meta.setLore(List.of(
                 ChatColor.GRAY + "Reveals nearby players"
         ));
+
+        // ✨ ENCHANTMENT GLINT (HIDDEN)
+        meta.addEnchant(Enchantment.LUCK, 1, true);
+        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
 
         meta.getPersistentDataContainer()
                 .set(bellKey, PersistentDataType.BOOLEAN, true);
