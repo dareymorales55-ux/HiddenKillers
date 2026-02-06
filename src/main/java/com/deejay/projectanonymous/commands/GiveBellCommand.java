@@ -1,5 +1,6 @@
 package com.deejay.projectanonymous.commands;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -12,30 +13,30 @@ import com.deejay.projectanonymous.items.BellOfTruth;
 public class GiveBellCommand implements CommandExecutor {
 
     private final ProjectAnonymous plugin;
-    private final BellOfTruth bell;
 
     public GiveBellCommand(ProjectAnonymous plugin) {
         this.plugin = plugin;
-        this.bell = new BellOfTruth(plugin);
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
-        if (!(sender instanceof Player)) {
-            sender.sendMessage("Only players can use this command.");
+        if (args.length != 1) {
+            sender.sendMessage(ChatColor.RED + "Usage: /givebell <player>");
             return true;
         }
 
-        Player player = (Player) sender;
-
-        if (!player.hasPermission("projectanonymous.givebell")) {
-            player.sendMessage(ChatColor.RED + "You don't have permission.");
+        Player target = Bukkit.getPlayerExact(args[0]);
+        if (target == null) {
+            sender.sendMessage(ChatColor.RED + "Player not found.");
             return true;
         }
 
-        player.getInventory().addItem(bell.createBell());
-        player.sendMessage(ChatColor.DARK_RED + "" + ChatColor.BOLD + "You have been given the Bell of Truth.");
+        BellOfTruth bell = new BellOfTruth(plugin);
+        target.getInventory().addItem(bell.createBell());
+
+        sender.sendMessage(ChatColor.GREEN + "Gave Bell of Truth to " + target.getName());
+        target.sendMessage(ChatColor.DARK_RED + "" + ChatColor.BOLD + "You received the Bell of Truth");
 
         return true;
     }
