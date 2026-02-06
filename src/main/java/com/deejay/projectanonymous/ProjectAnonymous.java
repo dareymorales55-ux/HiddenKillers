@@ -3,8 +3,10 @@ package com.deejay.projectanonymous;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import com.deejay.projectanonymous.commands.GiveCompassCommand;
 import com.deejay.projectanonymous.commands.RevealCommand;
 import com.deejay.projectanonymous.commands.UnrevealCommand;
+import com.deejay.projectanonymous.items.DetectivesCompass;
 import com.deejay.projectanonymous.listeners.DeathListener;
 import com.deejay.projectanonymous.listeners.JoinListener;
 import com.deejay.projectanonymous.reveal.HourlyReveal;
@@ -41,6 +43,11 @@ public class ProjectAnonymous extends JavaPlugin {
                 this
         );
 
+        Bukkit.getPluginManager().registerEvents(
+                new DetectivesCompass(this),
+                this
+        );
+
         // =========================
         // COMMANDS
         // =========================
@@ -50,6 +57,10 @@ public class ProjectAnonymous extends JavaPlugin {
 
         getCommand("unreveal").setExecutor(
                 new UnrevealCommand(this)
+        );
+
+        getCommand("givecompass").setExecutor(
+                new GiveCompassCommand()
         );
 
         getLogger().info("ProjectAnonymous enabled.");
