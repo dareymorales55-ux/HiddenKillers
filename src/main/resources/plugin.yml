@@ -23,6 +23,11 @@ commands:
     usage: /givecompass <player>
     permission: projectanonymous.givecompass
 
+  givebell:
+    description: Give the Bell of Truth
+    usage: /givebell <player>
+    permission: projectanonymous.givebell
+
 permissions:
   projectanonymous.reveal:
     description: Allows revealing players manually
@@ -34,4 +39,8 @@ permissions:
 
   projectanonymous.givecompass:
     description: Allows giving the detective compass
+    default: op
+
+  projectanonymous.givebell:
+    description: Allows giving the Bell of Truth
     default: op
