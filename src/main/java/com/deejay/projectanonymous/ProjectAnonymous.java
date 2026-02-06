@@ -3,9 +3,11 @@ package com.deejay.projectanonymous;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import com.deejay.projectanonymous.commands.GiveBellCommand;
 import com.deejay.projectanonymous.commands.GiveCompassCommand;
 import com.deejay.projectanonymous.commands.RevealCommand;
 import com.deejay.projectanonymous.commands.UnrevealCommand;
+import com.deejay.projectanonymous.items.BellOfTruth;
 import com.deejay.projectanonymous.items.DetectivesCompass;
 import com.deejay.projectanonymous.listeners.DeathListener;
 import com.deejay.projectanonymous.listeners.JoinListener;
@@ -20,7 +22,7 @@ public class ProjectAnonymous extends JavaPlugin {
 
         // Ensure NickAPI is present (USED FOR SKINS ONLY)
         if (Bukkit.getPluginManager().getPlugin("NickAPI") == null) {
-            getLogger().severe("NickAPI not found! Disabling ProjectAnonymous.");
+            getLogger().severe("NickAPI not found! Disabling HiddenKillers.");
             Bukkit.getPluginManager().disablePlugin(this);
             return;
         }
@@ -28,47 +30,26 @@ public class ProjectAnonymous extends JavaPlugin {
         // =========================
         // LISTENERS
         // =========================
-        Bukkit.getPluginManager().registerEvents(
-                new JoinListener(this),
-                this
-        );
-
-        Bukkit.getPluginManager().registerEvents(
-                new DeathListener(this),
-                this
-        );
-
-        Bukkit.getPluginManager().registerEvents(
-                new HourlyReveal(this),
-                this
-        );
-
-        Bukkit.getPluginManager().registerEvents(
-                new DetectivesCompass(this),
-                this
-        );
+        Bukkit.getPluginManager().registerEvents(new JoinListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new DeathListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new HourlyReveal(this), this);
+        Bukkit.getPluginManager().registerEvents(new DetectivesCompass(this), this);
+        Bukkit.getPluginManager().registerEvents(new BellOfTruth(this), this);
 
         // =========================
         // COMMANDS
         // =========================
-        getCommand("reveal").setExecutor(
-                new RevealCommand(this)
-        );
+        getCommand("reveal").setExecutor(new RevealCommand(this));
+        getCommand("unreveal").setExecutor(new UnrevealCommand(this));
+        getCommand("givecompass").setExecutor(new GiveCompassCommand());
+        getCommand("givebell").setExecutor(new GiveBellCommand(this));
 
-        getCommand("unreveal").setExecutor(
-                new UnrevealCommand(this)
-        );
-
-        getCommand("givecompass").setExecutor(
-                new GiveCompassCommand()
-        );
-
-        getLogger().info("ProjectAnonymous enabled.");
+        getLogger().info("HiddenKillers enabled.");
     }
 
     @Override
     public void onDisable() {
-        getLogger().info("ProjectAnonymous disabled.");
+        getLogger().info("HiddenKillers disabled.");
     }
 
     /**
