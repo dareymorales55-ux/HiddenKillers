@@ -181,7 +181,7 @@ public class DragonEgg implements Listener {
     }
 
     private void updateHealth(Player player) {
-        AttributeInstance attr = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        AttributeInstance attr = player.getAttribute(Attribute.MAX_HEALTH);
         if (attr == null) return;
 
         int hearts = heartMap.getOrDefault(player.getUniqueId(), 0);
@@ -216,7 +216,7 @@ public class DragonEgg implements Listener {
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (!hasEgg(player)) {
                 heartMap.remove(player.getUniqueId());
-                AttributeInstance attr = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+                AttributeInstance attr = player.getAttribute(Attribute.MAX_HEALTH);
                 if (attr != null) attr.setBaseValue(20);
             }
         }, 1L);
