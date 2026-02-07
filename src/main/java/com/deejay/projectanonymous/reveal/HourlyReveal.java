@@ -44,21 +44,19 @@ public final class HourlyReveal implements Listener {
 
     private void startCycle() {
         new BukkitRunnable() {
-
             @Override
             public void run() {
 
                 // Step 1: wait 10 minutes
                 Bukkit.getScheduler().runTaskLater(plugin, () -> {
 
-                    // Step 2: warning message
                     Bukkit.broadcastMessage(
                             ChatColor.RED + "" + ChatColor.BOLD +
                             "Player(s) will be revealed promptly…"
                     );
 
-                    // Step 3: wait 5 seconds
-                    Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                    // Step 2: wait 5 seconds
+                    Bukkit.getScheduler().runTaskLater(() -> {
 
                         revealRandomPlayers();
 
@@ -67,7 +65,6 @@ public final class HourlyReveal implements Listener {
                 }, 20L * 60 * 10);
 
             }
-
         }.runTask(plugin);
     }
 
@@ -76,18 +73,26 @@ public final class HourlyReveal implements Listener {
        ========================= */
 
     private void revealRandomPlayers() {
-        List<Player> online = new ArrayList<>(Bukkit.getOnlinePlayers());
-        if (online.isEmpty()) return;
 
-        Collections.shuffle(online);
+        // ✅ ONLY players who are NOT already revealed
+        List<Player> eligible = new ArrayList<>();
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (!RevealManager.isRevealed(player)) {
+                eligible.add(player);
+            }
+        }
+
+        if (eligible.isEmpty()) return;
+
+        Collections.shuffle(eligible);
 
         int revealCount = Math.min(
-                online.size(),
+                eligible.size(),
                 random.nextBoolean() ? 1 : 2
         );
 
         for (int i = 0; i < revealCount; i++) {
-            Player target = online.get(i);
+            Player target = eligible.get(i);
 
             RevealManager.reveal(
                     target,
@@ -96,7 +101,7 @@ public final class HourlyReveal implements Listener {
             );
         }
 
-        // Sound: reveal start
+        // Reveal start sound
         for (Player p : Bukkit.getOnlinePlayers()) {
             p.playSound(
                     p.getLocation(),
@@ -106,7 +111,7 @@ public final class HourlyReveal implements Listener {
             );
         }
 
-        // After reveal duration → end sound + schedule next cycle
+        // End reveal + schedule next cycle
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
 
             for (Player p : Bukkit.getOnlinePlayers()) {
@@ -118,7 +123,7 @@ public final class HourlyReveal implements Listener {
                 );
             }
 
-            // Wait 1 hour, then repeat
+            // Wait 1 hour before restarting cycle
             Bukkit.getScheduler().runTaskLater(
                     plugin,
                     this::startCycle,
