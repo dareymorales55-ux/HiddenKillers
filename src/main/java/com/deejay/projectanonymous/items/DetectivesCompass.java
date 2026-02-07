@@ -21,20 +21,18 @@ public class DetectivesCompass implements Listener {
 
     private final ProjectAnonymous plugin;
 
-    // ===== ITEM TEXT =====
     private static final String COMPASS_NAME =
             ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + "Detectives Compass";
 
     private static final List<String> COMPASS_LORE = List.of(
-            ChatColor.GRAY + "Right-click to hunt a random player",
+            ChatColor.GRAY + "Right-click to hunt the closest player",
             ChatColor.GRAY + "Tracks target for 5 minutes",
             ChatColor.RED + "Overworld only"
     );
 
+    private static final int TRACK_DURATION_SECONDS = 300; // 5 minutes
+    private static final int COOLDOWN_SECONDS = 900;       // 15 minutes
     private static final double MIN_TRACK_DISTANCE = 8.0;
-
-    private static final int TRACK_DURATION_SECONDS = 300;   // 5 minutes
-    private static final int COOLDOWN_SECONDS = 900;         // 15 minutes
 
     private final Map<UUID, Long> cooldowns = new HashMap<>();
     private final Map<UUID, TrackingData> tracking = new HashMap<>();
@@ -74,8 +72,7 @@ public class DetectivesCompass implements Listener {
         if (!item.hasItemMeta()) return;
 
         ItemMeta meta = item.getItemMeta();
-        if (!meta.hasDisplayName()) return;
-        if (!meta.getDisplayName().equals(COMPASS_NAME)) return;
+        if (!COMPASS_NAME.equals(meta.getDisplayName())) return;
 
         event.setCancelled(true);
 
@@ -86,17 +83,17 @@ public class DetectivesCompass implements Listener {
 
         // ===== COOLDOWN =====
         if (cooldowns.containsKey(player.getUniqueId())) {
-            long timeLeft =
+            long remaining =
                     (cooldowns.get(player.getUniqueId()) - System.currentTimeMillis()) / 1000;
 
-            if (timeLeft > 0) {
-                player.sendMessage(ChatColor.RED + "Cooldown: " + formatTime((int) timeLeft));
+            if (remaining > 0) {
+                player.sendMessage(ChatColor.RED + "Cooldown: " + formatTime((int) remaining));
                 return;
             }
             cooldowns.remove(player.getUniqueId());
         }
 
-        // ===== FIND CLOSEST VALID TARGET =====
+        // ===== FIND CLOSEST VALID TARGET (EXCLUDE <= 8 BLOCKS) =====
         Player closestTarget = null;
         double closestDistance = Double.MAX_VALUE;
 
@@ -105,8 +102,7 @@ public class DetectivesCompass implements Listener {
             if (target.getWorld().getEnvironment() != World.Environment.NORMAL) continue;
 
             double distance = player.getLocation().distance(target.getLocation());
-
-            if (distance < MIN_TRACK_DISTANCE) continue;
+            if (distance <= MIN_TRACK_DISTANCE) continue;
 
             if (distance < closestDistance) {
                 closestDistance = distance;
@@ -119,29 +115,38 @@ public class DetectivesCompass implements Listener {
             return;
         }
 
-        // ===== START TRACKING =====
+        // ===== START HUNT =====
         player.sendMessage(ChatColor.YELLOW + "Tracking " + closestTarget.getName());
         closestTarget.sendMessage(ChatColor.RED + "You are being tracked.");
+
+        player.playSound(player.getLocation(),
+                Sound.BLOCK_RESPAWN_ANCHOR_CHARGE, 1f, 1f);
+        closestTarget.playSound(closestTarget.getLocation(),
+                Sound.BLOCK_RESPAWN_ANCHOR_CHARGE, 1f, 1f);
 
         playParticles(closestTarget);
 
         cooldowns.put(
                 player.getUniqueId(),
-                System.currentTimeMillis() + (COOLDOWN_SECONDS * 1000L)
+                System.currentTimeMillis() + COOLDOWN_SECONDS * 1000L
         );
-        player.setCooldown(Material.COMPASS, 20 * COOLDOWN_SECONDS);
+        player.setCooldown(Material.COMPASS, COOLDOWN_SECONDS * 20);
 
         tracking.put(
                 player.getUniqueId(),
-                new TrackingData(closestTarget.getUniqueId(), TRACK_DURATION_SECONDS)
+                new TrackingData(closestTarget.getUniqueId())
         );
 
         startTracking(player);
     }
 
+    /* =========================
+       TRACKING LOOP
+       ========================= */
+
     private void startTracking(Player hunter) {
         new BukkitRunnable() {
-            int seconds = TRACK_DURATION_SECONDS;
+            int timeLeft = TRACK_DURATION_SECONDS;
 
             @Override
             public void run() {
@@ -150,9 +155,7 @@ public class DetectivesCompass implements Listener {
                     return;
                 }
 
-                TrackingData data = tracking.get(hunter.getUniqueId());
-                Player target = Bukkit.getPlayer(data.target);
-
+                Player target = Bukkit.getPlayer(tracking.get(hunter.getUniqueId()).target);
                 if (target == null || !target.isOnline()) {
                     hunter.sendMessage(ChatColor.RED + "Target offline.");
                     tracking.remove(hunter.getUniqueId());
@@ -160,22 +163,35 @@ public class DetectivesCompass implements Listener {
                     return;
                 }
 
+                if (!hunter.getWorld().equals(target.getWorld())) {
+                    hunter.sendMessage(ChatColor.RED + "Target left dimension.");
+                    tracking.remove(hunter.getUniqueId());
+                    cancel();
+                    return;
+                }
+
                 double distance = hunter.getLocation().distance(target.getLocation());
-                String arrow = getArrow(hunter, target);
+                String arrow = getDirectionArrow(hunter, target);
 
                 hunter.spigot().sendMessage(
                         ChatMessageType.ACTION_BAR,
                         new TextComponent(
-                                ChatColor.RED + formatTime(seconds) +
+                                ChatColor.RED + "" + ChatColor.BOLD + formatTime(timeLeft) +
                                 ChatColor.GRAY + " | " +
-                                (int) distance + "m " + arrow
+                                ChatColor.WHITE + (int) distance + "m " + arrow
                         )
                 );
 
-                seconds--;
-                if (seconds <= 0) {
+                timeLeft--;
+                if (timeLeft <= 0) {
                     hunter.sendMessage(ChatColor.GRAY + "Tracking ended.");
                     target.sendMessage(ChatColor.GRAY + "Tracking ended.");
+
+                    hunter.playSound(hunter.getLocation(),
+                            Sound.BLOCK_RESPAWN_ANCHOR_DEPLETE, 1f, 1f);
+                    target.playSound(target.getLocation(),
+                            Sound.BLOCK_RESPAWN_ANCHOR_DEPLETE, 1f, 1f);
+
                     tracking.remove(hunter.getUniqueId());
                     cancel();
                 }
@@ -183,28 +199,48 @@ public class DetectivesCompass implements Listener {
         }.runTaskTimer(plugin, 0L, 20L);
     }
 
+    /* =========================
+       PARTICLES (OLD STYLE)
+       ========================= */
+
     private void playParticles(Player target) {
         Location loc = target.getLocation();
-        for (int i = 0; i < 20; i++) {
-            double angle = 2 * Math.PI * i / 20;
+        double radius = 1.5;
+        int points = 24;
+
+        for (int i = 0; i < points; i++) {
+            double angle = 2 * Math.PI * i / points;
+            double x = radius * Math.cos(angle);
+            double z = radius * Math.sin(angle);
+
             loc.getWorld().spawnParticle(
                     Particle.TRIAL_SPAWNER_DETECTION_OMINOUS,
-                    loc.clone().add(Math.cos(angle), 1, Math.sin(angle)),
-                    1
+                    loc.clone().add(x, 1, z),
+                    1, 0, 0, 0, 0
             );
         }
     }
 
-    private String getArrow(Player from, Player to) {
-        double dx = to.getX() - from.getX();
-        double dz = to.getZ() - from.getZ();
-        double angle = Math.toDegrees(Math.atan2(dz, dx)) - from.getYaw();
-        angle = (angle + 360) % 360;
+    /* =========================
+       DIRECTION (8 ARROWS)
+       ========================= */
 
-        if (angle < 45 || angle >= 315) return "⬆";
-        if (angle < 135) return "➡";
-        if (angle < 225) return "⬇";
-        return "⬅";
+    private String getDirectionArrow(Player hunter, Player target) {
+        double dx = target.getX() - hunter.getX();
+        double dz = target.getZ() - hunter.getZ();
+
+        double angle = Math.toDegrees(Math.atan2(dz, dx)) - 90;
+        double yaw = hunter.getLocation().getYaw();
+        double relative = (angle - yaw + 360) % 360;
+
+        if (relative < 22.5 || relative >= 337.5) return "⬆";
+        if (relative < 67.5) return "⬈";
+        if (relative < 112.5) return "➡";
+        if (relative < 157.5) return "⬊";
+        if (relative < 202.5) return "⬇";
+        if (relative < 247.5) return "⬋";
+        if (relative < 292.5) return "⬅";
+        return "⬉";
     }
 
     private String formatTime(int seconds) {
@@ -213,9 +249,8 @@ public class DetectivesCompass implements Listener {
 
     private static class TrackingData {
         UUID target;
-        int duration;
 
-        TrackingData(UUID target, int duration) {
+        TrackingData(UUID target) {
             this.target = target;
         }
     }
