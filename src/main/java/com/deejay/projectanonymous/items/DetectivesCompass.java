@@ -1,6 +1,7 @@
 package com.deejay.projectanonymous.items;
 
 import java.util.*;
+
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 
@@ -23,6 +24,11 @@ public class DetectivesCompass implements Listener {
     private static final String COMPASS_NAME =
             ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + "Detective's Compass";
 
+    private static final double MIN_TRACK_DISTANCE = 8.0;
+
+    private static final int TRACK_DURATION_SECONDS = 300;   // 5 minutes
+    private static final int COOLDOWN_SECONDS = 900;         // 15 minutes
+
     private final Map<UUID, Long> cooldowns = new HashMap<>();
     private final Map<UUID, TrackingData> tracking = new HashMap<>();
 
@@ -43,7 +49,6 @@ public class DetectivesCompass implements Listener {
 
         ItemMeta meta = item.getItemMeta();
         if (!meta.hasDisplayName()) return;
-
         if (!meta.getDisplayName().equals(COMPASS_NAME)) return;
 
         event.setCancelled(true);
@@ -53,9 +58,11 @@ public class DetectivesCompass implements Listener {
             return;
         }
 
-        // Cooldown
+        // ===== COOLDOWN =====
         if (cooldowns.containsKey(player.getUniqueId())) {
-            long timeLeft = (cooldowns.get(player.getUniqueId()) - System.currentTimeMillis()) / 1000;
+            long timeLeft =
+                    (cooldowns.get(player.getUniqueId()) - System.currentTimeMillis()) / 1000;
+
             if (timeLeft > 0) {
                 player.sendMessage(ChatColor.RED + "Cooldown: " + formatTime((int) timeLeft));
                 return;
@@ -63,36 +70,55 @@ public class DetectivesCompass implements Listener {
             cooldowns.remove(player.getUniqueId());
         }
 
-        List<Player> targets = new ArrayList<>();
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            if (!p.equals(player) && p.getWorld().getEnvironment() == World.Environment.NORMAL) {
-                targets.add(p);
+        // ===== FIND CLOSEST VALID TARGET =====
+        Player closestTarget = null;
+        double closestDistance = Double.MAX_VALUE;
+
+        for (Player target : Bukkit.getOnlinePlayers()) {
+            if (target.equals(player)) continue;
+            if (target.getWorld().getEnvironment() != World.Environment.NORMAL) continue;
+
+            double distance = player.getLocation().distance(target.getLocation());
+
+            // Team huddle protection
+            if (distance < MIN_TRACK_DISTANCE) continue;
+
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestTarget = target;
             }
         }
 
-        if (targets.isEmpty()) {
+        if (closestTarget == null) {
             player.sendMessage(ChatColor.RED + "No players to track.");
             return;
         }
 
-        Player target = targets.get(new Random().nextInt(targets.size()));
+        // ===== START TRACKING =====
+        player.sendMessage(ChatColor.YELLOW + "Tracking " + closestTarget.getName());
+        closestTarget.sendMessage(ChatColor.RED + "You are being tracked.");
 
-        player.sendMessage(ChatColor.YELLOW + "Tracking " + target.getName());
-        target.sendMessage(ChatColor.RED + "You are being tracked.");
+        playParticles(closestTarget);
 
-        playParticles(target);
+        cooldowns.put(
+                player.getUniqueId(),
+                System.currentTimeMillis() + (COOLDOWN_SECONDS * 1000L)
+        );
+        player.setCooldown(Material.COMPASS, 20 * COOLDOWN_SECONDS);
 
-        cooldowns.put(player.getUniqueId(), System.currentTimeMillis() + 60_000);
-        player.setCooldown(Material.COMPASS, 20 * 60);
+        tracking.put(
+                player.getUniqueId(),
+                new TrackingData(closestTarget.getUniqueId(), TRACK_DURATION_SECONDS)
+        );
 
-        tracking.put(player.getUniqueId(), new TrackingData(target.getUniqueId(), 30));
         startTracking(player);
     }
 
     private void startTracking(Player hunter) {
         new BukkitRunnable() {
-            int seconds = 30;
+            int seconds = TRACK_DURATION_SECONDS;
 
+            @Override
             public void run() {
                 if (!hunter.isOnline() || !tracking.containsKey(hunter.getUniqueId())) {
                     cancel();
@@ -114,9 +140,11 @@ public class DetectivesCompass implements Listener {
 
                 hunter.spigot().sendMessage(
                         ChatMessageType.ACTION_BAR,
-                        new TextComponent(ChatColor.RED + formatTime(seconds) +
+                        new TextComponent(
+                                ChatColor.RED + formatTime(seconds) +
                                 ChatColor.GRAY + " | " +
-                                (int) distance + "m " + arrow)
+                                (int) distance + "m " + arrow
+                        )
                 );
 
                 seconds--;
