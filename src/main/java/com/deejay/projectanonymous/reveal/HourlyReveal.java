@@ -56,7 +56,7 @@ public final class HourlyReveal implements Listener {
                     );
 
                     // Step 2: wait 5 seconds
-                    Bukkit.getScheduler().runTaskLater(() -> {
+                    Bukkit.getScheduler().runTaskLater(plugin, () -> {
 
                         revealRandomPlayers();
 
@@ -74,7 +74,7 @@ public final class HourlyReveal implements Listener {
 
     private void revealRandomPlayers() {
 
-        // ✅ ONLY players who are NOT already revealed
+        // ONLY players NOT already revealed
         List<Player> eligible = new ArrayList<>();
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (!RevealManager.isRevealed(player)) {
