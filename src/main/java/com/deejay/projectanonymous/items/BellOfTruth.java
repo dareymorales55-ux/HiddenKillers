@@ -30,9 +30,9 @@ public class BellOfTruth implements Listener {
     private final Map<UUID, Long> cooldowns = new HashMap<>();
 
     // ===== CONSTANTS =====
-    private static final int COOLDOWN_SECONDS = 300;
-    private static final int REVEAL_DURATION_TICKS = 200;
-    private static final double RADIUS = 20.0;
+    private static final int COOLDOWN_SECONDS = 300;          // 5 minutes
+    private static final int REVEAL_DURATION_TICKS = 12000;   // 10 minutes
+    private static final double RADIUS = 15.0;                // 15 blocks
 
     public BellOfTruth(ProjectAnonymous plugin) {
         this.plugin = plugin;
@@ -103,8 +103,9 @@ public class BellOfTruth implements Listener {
         Location bellLoc = block.getLocation().add(0.5, 0.5, 0.5);
         spawnBellCircle(bellLoc);
 
-        // 🔥 Reveal via RevealManager ONLY
+        // 🔥 Reveal via RevealManager ONLY (excluding ringer)
         for (Player target : Bukkit.getOnlinePlayers()) {
+            if (target.equals(player)) continue;
             if (!target.getWorld().equals(bellLoc.getWorld())) continue;
             if (target.getLocation().distance(bellLoc) > RADIUS) continue;
 
@@ -152,12 +153,14 @@ public class BellOfTruth implements Listener {
         ItemStack bell = new ItemStack(Material.BELL);
         ItemMeta meta = bell.getItemMeta();
 
-        meta.setDisplayName(ChatColor.DARK_RED + "" + ChatColor.BOLD + "Bell of Truth");
+        meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "Bell of Truth");
         meta.setLore(List.of(
-                ChatColor.GRAY + "Reveals nearby players"
+                ChatColor.GRAY + "Reveals all players within a 15 block radius",
+                ChatColor.GRAY + "Reveal lasts 10 minutes",
+                ChatColor.RED + "Does not reveal the ringer"
         ));
 
-        // ✅ SAFE enchant glint (NO enum usage)
+        // ✅ SAFE enchant glint
         Enchantment unbreaking = Enchantment.getByKey(
                 NamespacedKey.minecraft("unbreaking")
         );
