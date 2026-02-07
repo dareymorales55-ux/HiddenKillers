@@ -9,6 +9,7 @@ import com.deejay.projectanonymous.commands.RevealCommand;
 import com.deejay.projectanonymous.commands.UnrevealCommand;
 import com.deejay.projectanonymous.items.BellOfTruth;
 import com.deejay.projectanonymous.items.DetectivesCompass;
+import com.deejay.projectanonymous.items.DragonEgg;
 import com.deejay.projectanonymous.listeners.DeathListener;
 import com.deejay.projectanonymous.listeners.JoinListener;
 import com.deejay.projectanonymous.reveal.HourlyReveal;
@@ -35,6 +36,7 @@ public class ProjectAnonymous extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new HourlyReveal(this), this);
         Bukkit.getPluginManager().registerEvents(new DetectivesCompass(this), this);
         Bukkit.getPluginManager().registerEvents(new BellOfTruth(this), this);
+        Bukkit.getPluginManager().registerEvents(new DragonEgg(this), this);
 
         // =========================
         // COMMANDS
