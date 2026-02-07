@@ -21,8 +21,15 @@ public class DetectivesCompass implements Listener {
 
     private final ProjectAnonymous plugin;
 
+    // ===== ITEM TEXT =====
     private static final String COMPASS_NAME =
-            ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + "Detective's Compass";
+            ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + "Detectives Compass";
+
+    private static final List<String> COMPASS_LORE = List.of(
+            ChatColor.GRAY + "Right-click to hunt a random player",
+            ChatColor.GRAY + "Tracks target for 5 minutes",
+            ChatColor.RED + "Overworld only"
+    );
 
     private static final double MIN_TRACK_DISTANCE = 8.0;
 
@@ -35,6 +42,25 @@ public class DetectivesCompass implements Listener {
     public DetectivesCompass(ProjectAnonymous plugin) {
         this.plugin = plugin;
     }
+
+    /* =========================
+       ITEM CREATION
+       ========================= */
+
+    public static ItemStack createCompass() {
+        ItemStack compass = new ItemStack(Material.COMPASS);
+        ItemMeta meta = compass.getItemMeta();
+
+        meta.setDisplayName(COMPASS_NAME);
+        meta.setLore(COMPASS_LORE);
+
+        compass.setItemMeta(meta);
+        return compass;
+    }
+
+    /* =========================
+       USE LOGIC
+       ========================= */
 
     @EventHandler
     public void onUse(PlayerInteractEvent event) {
@@ -80,7 +106,6 @@ public class DetectivesCompass implements Listener {
 
             double distance = player.getLocation().distance(target.getLocation());
 
-            // Team huddle protection
             if (distance < MIN_TRACK_DISTANCE) continue;
 
             if (distance < closestDistance) {
@@ -192,7 +217,6 @@ public class DetectivesCompass implements Listener {
 
         TrackingData(UUID target, int duration) {
             this.target = target;
-            this.duration = duration;
         }
     }
 }
